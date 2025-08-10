@@ -1274,7 +1274,7 @@ func Setup(
 		}, httputil.WithAllowGuests()),
 	).Methods(http.MethodGet, http.MethodOptions)
 
-	if cfg.KeyServer.Enabled {
+	if dendriteCfg.KeyServer.Enabled {
 	// Key Backup Versions (Metadata)
 
 	getBackupKeysVersion := httputil.MakeAuthAPI("get_backup_keys_version", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
