@@ -1,0 +1,27 @@
+version: 2
+
+federation_api:
+  enabled: false
+
+relay_api:
+  enabled: false
+
+key_server:
+  enabled: false
+
+client_api:
+  features:
+    enable_presence: false
+    enable_voip: false
+    enable_pushers: false
+    enable_push_rules: false
+
+media_api:
+  base_path: ./media
+
+room_server: {}
+sync_api: {}
+user_api: {}
+app_service_api:
+  internal_api:
+    listen: http://localhost:7777

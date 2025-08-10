@@ -2,11 +2,13 @@ package config
 
 type KeyServer struct {
 	Matrix *Global `yaml:"-"`
+	Enabled bool `yaml:"enabled"`
 
 	Database DatabaseOptions `yaml:"database,omitempty"`
 }
 
 func (c *KeyServer) Defaults(opts DefaultOpts) {
+	c.Enabled = true
 	if opts.Generate {
 		if !opts.SingleDatabase {
 			c.Database.ConnectionString = "file:keyserver.db"

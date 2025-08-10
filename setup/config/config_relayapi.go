@@ -8,6 +8,7 @@ package config
 
 type RelayAPI struct {
 	Matrix *Global `yaml:"-"`
+	Enabled bool `yaml:"enabled"`
 
 	// The database stores information used by the relay queue to
 	// forward transactions to remote servers.
@@ -15,6 +16,7 @@ type RelayAPI struct {
 }
 
 func (c *RelayAPI) Defaults(opts DefaultOpts) {
+	c.Enabled = true
 	if opts.Generate {
 		if !opts.SingleDatabase {
 			c.Database.ConnectionString = "file:relayapi.db"

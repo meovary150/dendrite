@@ -733,139 +733,141 @@ func Setup(
 
 	// Push rules
 
-	v3mux.Handle("/pushrules",
-		httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
-			return util.JSONResponse{
-				Code: http.StatusBadRequest,
-				JSON: spec.InvalidParam("missing trailing slash"),
-			}
-		}),
-	).Methods(http.MethodGet, http.MethodOptions)
+	if cfg.Features.EnablePushRules {
+		v3mux.Handle("/pushrules",
+			httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
+				return util.JSONResponse{
+					Code: http.StatusBadRequest,
+					JSON: spec.InvalidParam("missing trailing slash"),
+				}
+			}),
+		).Methods(http.MethodGet, http.MethodOptions)
 
-	v3mux.Handle("/pushrules/",
-		httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
-			return GetAllPushRules(req.Context(), device, userAPI)
-		}),
-	).Methods(http.MethodGet, http.MethodOptions)
+		v3mux.Handle("/pushrules/",
+			httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
+				return GetAllPushRules(req.Context(), device, userAPI)
+			}),
+		).Methods(http.MethodGet, http.MethodOptions)
 
-	v3mux.Handle("/pushrules/",
-		httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
-			return util.JSONResponse{
-				Code: http.StatusBadRequest,
-				JSON: spec.InvalidParam("scope, kind and rule ID must be specified"),
-			}
-		}),
-	).Methods(http.MethodPut)
+		v3mux.Handle("/pushrules/",
+			httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
+				return util.JSONResponse{
+					Code: http.StatusBadRequest,
+					JSON: spec.InvalidParam("scope, kind and rule ID must be specified"),
+				}
+			}),
+		).Methods(http.MethodPut)
 
-	v3mux.Handle("/pushrules/{scope}/",
-		httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
-			vars, err := httputil.URLDecodeMapValues(mux.Vars(req))
-			if err != nil {
-				return util.ErrorResponse(err)
-			}
-			return GetPushRulesByScope(req.Context(), vars["scope"], device, userAPI)
-		}),
-	).Methods(http.MethodGet, http.MethodOptions)
+		v3mux.Handle("/pushrules/{scope}/",
+			httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
+				vars, err := httputil.URLDecodeMapValues(mux.Vars(req))
+				if err != nil {
+					return util.ErrorResponse(err)
+				}
+				return GetPushRulesByScope(req.Context(), vars["scope"], device, userAPI)
+			}),
+		).Methods(http.MethodGet, http.MethodOptions)
 
-	v3mux.Handle("/pushrules/{scope}",
-		httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
-			return util.JSONResponse{
-				Code: http.StatusBadRequest,
-				JSON: spec.InvalidParam("missing trailing slash after scope"),
-			}
-		}),
-	).Methods(http.MethodGet, http.MethodOptions)
+		v3mux.Handle("/pushrules/{scope}",
+			httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
+				return util.JSONResponse{
+					Code: http.StatusBadRequest,
+					JSON: spec.InvalidParam("missing trailing slash after scope"),
+				}
+			}),
+		).Methods(http.MethodGet, http.MethodOptions)
 
-	v3mux.Handle("/pushrules/{scope:[^/]+/?}",
-		httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
-			return util.JSONResponse{
-				Code: http.StatusBadRequest,
-				JSON: spec.InvalidParam("kind and rule ID must be specified"),
-			}
-		}),
-	).Methods(http.MethodPut)
+		v3mux.Handle("/pushrules/{scope:[^/]+/?}",
+			httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
+				return util.JSONResponse{
+					Code: http.StatusBadRequest,
+					JSON: spec.InvalidParam("kind and rule ID must be specified"),
+				}
+			}),
+		).Methods(http.MethodPut)
 
-	v3mux.Handle("/pushrules/{scope}/{kind}/",
-		httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
-			vars, err := httputil.URLDecodeMapValues(mux.Vars(req))
-			if err != nil {
-				return util.ErrorResponse(err)
-			}
-			return GetPushRulesByKind(req.Context(), vars["scope"], vars["kind"], device, userAPI)
-		}),
-	).Methods(http.MethodGet, http.MethodOptions)
+		v3mux.Handle("/pushrules/{scope}/{kind}/",
+			httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
+				vars, err := httputil.URLDecodeMapValues(mux.Vars(req))
+				if err != nil {
+					return util.ErrorResponse(err)
+				}
+				return GetPushRulesByKind(req.Context(), vars["scope"], vars["kind"], device, userAPI)
+			}),
+		).Methods(http.MethodGet, http.MethodOptions)
 
-	v3mux.Handle("/pushrules/{scope}/{kind}",
-		httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
-			return util.JSONResponse{
-				Code: http.StatusBadRequest,
-				JSON: spec.InvalidParam("missing trailing slash after kind"),
-			}
-		}),
-	).Methods(http.MethodGet, http.MethodOptions)
+		v3mux.Handle("/pushrules/{scope}/{kind}",
+			httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
+				return util.JSONResponse{
+					Code: http.StatusBadRequest,
+					JSON: spec.InvalidParam("missing trailing slash after kind"),
+				}
+			}),
+		).Methods(http.MethodGet, http.MethodOptions)
 
-	v3mux.Handle("/pushrules/{scope}/{kind:[^/]+/?}",
-		httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
-			return util.JSONResponse{
-				Code: http.StatusBadRequest,
-				JSON: spec.InvalidParam("rule ID must be specified"),
-			}
-		}),
-	).Methods(http.MethodPut)
+		v3mux.Handle("/pushrules/{scope}/{kind:[^/]+/?}",
+			httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
+				return util.JSONResponse{
+					Code: http.StatusBadRequest,
+					JSON: spec.InvalidParam("rule ID must be specified"),
+				}
+			}),
+		).Methods(http.MethodPut)
 
-	v3mux.Handle("/pushrules/{scope}/{kind}/{ruleID}",
-		httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
-			vars, err := httputil.URLDecodeMapValues(mux.Vars(req))
-			if err != nil {
-				return util.ErrorResponse(err)
-			}
-			return GetPushRuleByRuleID(req.Context(), vars["scope"], vars["kind"], vars["ruleID"], device, userAPI)
-		}),
-	).Methods(http.MethodGet, http.MethodOptions)
+		v3mux.Handle("/pushrules/{scope}/{kind}/{ruleID}",
+			httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
+				vars, err := httputil.URLDecodeMapValues(mux.Vars(req))
+				if err != nil {
+					return util.ErrorResponse(err)
+				}
+				return GetPushRuleByRuleID(req.Context(), vars["scope"], vars["kind"], vars["ruleID"], device, userAPI)
+			}),
+		).Methods(http.MethodGet, http.MethodOptions)
 
-	v3mux.Handle("/pushrules/{scope}/{kind}/{ruleID}",
-		httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
-			if r := rateLimits.Limit(req, device); r != nil {
-				return *r
-			}
-			vars, err := httputil.URLDecodeMapValues(mux.Vars(req))
-			if err != nil {
-				return util.ErrorResponse(err)
-			}
-			query := req.URL.Query()
-			return PutPushRuleByRuleID(req.Context(), vars["scope"], vars["kind"], vars["ruleID"], query.Get("after"), query.Get("before"), req.Body, device, userAPI)
-		}),
-	).Methods(http.MethodPut)
+		v3mux.Handle("/pushrules/{scope}/{kind}/{ruleID}",
+			httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
+				if r := rateLimits.Limit(req, device); r != nil {
+					return *r
+				}
+				vars, err := httputil.URLDecodeMapValues(mux.Vars(req))
+				if err != nil {
+					return util.ErrorResponse(err)
+				}
+				query := req.URL.Query()
+				return PutPushRuleByRuleID(req.Context(), vars["scope"], vars["kind"], vars["ruleID"], query.Get("after"), query.Get("before"), req.Body, device, userAPI)
+			}),
+		).Methods(http.MethodPut)
 
-	v3mux.Handle("/pushrules/{scope}/{kind}/{ruleID}",
-		httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
-			vars, err := httputil.URLDecodeMapValues(mux.Vars(req))
-			if err != nil {
-				return util.ErrorResponse(err)
-			}
-			return DeletePushRuleByRuleID(req.Context(), vars["scope"], vars["kind"], vars["ruleID"], device, userAPI)
-		}),
-	).Methods(http.MethodDelete)
+		v3mux.Handle("/pushrules/{scope}/{kind}/{ruleID}",
+			httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
+				vars, err := httputil.URLDecodeMapValues(mux.Vars(req))
+				if err != nil {
+					return util.ErrorResponse(err)
+				}
+				return DeletePushRuleByRuleID(req.Context(), vars["scope"], vars["kind"], vars["ruleID"], device, userAPI)
+			}),
+		).Methods(http.MethodDelete)
 
-	v3mux.Handle("/pushrules/{scope}/{kind}/{ruleID}/{attr}",
-		httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
-			vars, err := httputil.URLDecodeMapValues(mux.Vars(req))
-			if err != nil {
-				return util.ErrorResponse(err)
-			}
-			return GetPushRuleAttrByRuleID(req.Context(), vars["scope"], vars["kind"], vars["ruleID"], vars["attr"], device, userAPI)
-		}),
-	).Methods(http.MethodGet, http.MethodOptions)
+		v3mux.Handle("/pushrules/{scope}/{kind}/{ruleID}/{attr}",
+			httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
+				vars, err := httputil.URLDecodeMapValues(mux.Vars(req))
+				if err != nil {
+					return util.ErrorResponse(err)
+				}
+				return GetPushRuleAttrByRuleID(req.Context(), vars["scope"], vars["kind"], vars["ruleID"], vars["attr"], device, userAPI)
+			}),
+		).Methods(http.MethodGet, http.MethodOptions)
 
-	v3mux.Handle("/pushrules/{scope}/{kind}/{ruleID}/{attr}",
-		httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
-			vars, err := httputil.URLDecodeMapValues(mux.Vars(req))
-			if err != nil {
-				return util.ErrorResponse(err)
-			}
-			return PutPushRuleAttrByRuleID(req.Context(), vars["scope"], vars["kind"], vars["ruleID"], vars["attr"], req.Body, device, userAPI)
-		}),
-	).Methods(http.MethodPut)
+		v3mux.Handle("/pushrules/{scope}/{kind}/{ruleID}/{attr}",
+			httputil.MakeAuthAPI("push_rules", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
+				vars, err := httputil.URLDecodeMapValues(mux.Vars(req))
+				if err != nil {
+					return util.ErrorResponse(err)
+				}
+				return PutPushRuleAttrByRuleID(req.Context(), vars["scope"], vars["kind"], vars["ruleID"], vars["attr"], req.Body, device, userAPI)
+			}),
+		).Methods(http.MethodPut)
+	}
 
 	// Element user settings
 
@@ -955,14 +957,16 @@ func Setup(
 		}),
 	).Methods(http.MethodPost, http.MethodOptions)
 
-	v3mux.Handle("/voip/turnServer",
-		httputil.MakeAuthAPI("turn_server", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
-			if r := rateLimits.Limit(req, device); r != nil {
-				return *r
-			}
-			return RequestTurnServer(req, device, cfg)
-		}),
-	).Methods(http.MethodGet, http.MethodOptions)
+	if cfg.Features.EnableVoIP {
+		v3mux.Handle("/voip/turnServer",
+			httputil.MakeAuthAPI("turn_server", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
+				if r := rateLimits.Limit(req, device); r != nil {
+					return *r
+				}
+				return RequestTurnServer(req, device, cfg)
+			}),
+		).Methods(http.MethodGet, http.MethodOptions)
+	}
 
 	v3mux.Handle("/thirdparty/protocols",
 		httputil.MakeAuthAPI("thirdparty_protocols", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
@@ -1195,20 +1199,22 @@ func Setup(
 		}),
 	).Methods(http.MethodGet, http.MethodOptions)
 
-	v3mux.Handle("/pushers",
-		httputil.MakeAuthAPI("get_pushers", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
-			return GetPushers(req, device, userAPI)
-		}),
-	).Methods(http.MethodGet, http.MethodOptions)
+	if cfg.Features.EnablePushers {
+		v3mux.Handle("/pushers",
+			httputil.MakeAuthAPI("get_pushers", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
+				return GetPushers(req, device, userAPI)
+			}),
+		).Methods(http.MethodGet, http.MethodOptions)
 
-	v3mux.Handle("/pushers/set",
-		httputil.MakeAuthAPI("set_pushers", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
-			if r := rateLimits.Limit(req, device); r != nil {
-				return *r
-			}
-			return SetPusher(req, device, userAPI)
-		}),
-	).Methods(http.MethodPost, http.MethodOptions)
+		v3mux.Handle("/pushers/set",
+			httputil.MakeAuthAPI("set_pushers", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
+				if r := rateLimits.Limit(req, device); r != nil {
+					return *r
+				}
+				return SetPusher(req, device, userAPI)
+			}),
+		).Methods(http.MethodPost, http.MethodOptions)
+	}
 
 	// Stub implementations for sytest
 	v3mux.Handle("/events",
@@ -1488,24 +1494,26 @@ func Setup(
 			return SetReceipt(req, userAPI, syncProducer, device, vars["roomId"], vars["receiptType"], vars["eventId"])
 		}),
 	).Methods(http.MethodPost, http.MethodOptions)
-	v3mux.Handle("/presence/{userId}/status",
-		httputil.MakeAuthAPI("set_presence", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
-			vars, err := httputil.URLDecodeMapValues(mux.Vars(req))
-			if err != nil {
-				return util.ErrorResponse(err)
-			}
-			return SetPresence(req, cfg, device, syncProducer, vars["userId"])
-		}),
-	).Methods(http.MethodPut, http.MethodOptions)
-	v3mux.Handle("/presence/{userId}/status",
-		httputil.MakeAuthAPI("get_presence", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
-			vars, err := httputil.URLDecodeMapValues(mux.Vars(req))
-			if err != nil {
-				return util.ErrorResponse(err)
-			}
-			return GetPresence(req, device, natsClient, cfg.Matrix.JetStream.Prefixed(jetstream.RequestPresence), vars["userId"])
-		}),
-	).Methods(http.MethodGet, http.MethodOptions)
+	if cfg.Features.EnablePresence {
+		v3mux.Handle("/presence/{userId}/status",
+			httputil.MakeAuthAPI("set_presence", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
+				vars, err := httputil.URLDecodeMapValues(mux.Vars(req))
+				if err != nil {
+					return util.ErrorResponse(err)
+				}
+				return SetPresence(req, cfg, device, syncProducer, vars["userId"])
+			}),
+		).Methods(http.MethodPut, http.MethodOptions)
+		v3mux.Handle("/presence/{userId}/status",
+			httputil.MakeAuthAPI("get_presence", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {
+				vars, err := httputil.URLDecodeMapValues(mux.Vars(req))
+				if err != nil {
+					return util.ErrorResponse(err)
+				}
+				return GetPresence(req, device, natsClient, cfg.Matrix.JetStream.Prefixed(jetstream.RequestPresence), vars["userId"])
+			}),
+		).Methods(http.MethodGet, http.MethodOptions)
+	}
 
 	v3mux.Handle("/rooms/{roomID}/joined_members",
 		httputil.MakeAuthAPI("rooms_members", userAPI, func(req *http.Request, device *userapi.Device) util.JSONResponse {

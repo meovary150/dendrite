@@ -7,6 +7,7 @@ import (
 
 type FederationAPI struct {
 	Matrix *Global `yaml:"-"`
+	Enabled bool `yaml:"enabled"`
 
 	// The database stores information used by the federation destination queues to
 	// send transactions to remote servers.
@@ -53,6 +54,7 @@ type FederationAPI struct {
 }
 
 func (c *FederationAPI) Defaults(opts DefaultOpts) {
+	c.Enabled = true
 	c.FederationMaxRetries = 16
 	c.P2PFederationRetriesUntilAssumedOffline = 1
 	c.DisableTLSValidation = false
