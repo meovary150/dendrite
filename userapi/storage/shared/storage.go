@@ -703,7 +703,7 @@ func (d *Database) CreateDeviceWithRefreshToken(
 }
 
 func (d *Database) QueryRefreshToken(ctx context.Context, refreshToken string) (*api.Device, error) {
-	return d.DevicesTable.SelectDeviceByRefreshToken(ctx, refreshToken)
+	return d.Devices.SelectDeviceByRefreshToken(ctx, refreshToken)
 }
 
 func (d *Database) UpdateRefreshToken(ctx context.Context, deviceID, userID, oldRefreshToken, newAccessToken, newRefreshToken string) error {
@@ -712,12 +712,12 @@ func (d *Database) UpdateRefreshToken(ctx context.Context, deviceID, userID, old
 		return err
 	}
 	return d.Writer.Do(d.DB, nil, func(txn *sql.Tx) error {
-		return d.DevicesTable.UpdateDeviceTokens(ctx, txn, localpart, domain, deviceID, newAccessToken, newRefreshToken)
+		return d.Devices.UpdateDeviceTokens(ctx, txn, localpart, domain, deviceID, newAccessToken, newRefreshToken)
 	})
 }
 
 func (d *Database) GetDeviceByRefreshToken(ctx context.Context, refreshToken string) (*api.Device, error) {
-	return d.DevicesTable.SelectDeviceByRefreshToken(ctx, refreshToken)
+	return d.Devices.SelectDeviceByRefreshToken(ctx, refreshToken)
 }
 
 func (d *Database) UpdateDeviceTokens(ctx context.Context, userID string, serverName spec.ServerName, deviceID, accessToken, refreshToken string) error {
@@ -729,7 +729,7 @@ func (d *Database) UpdateDeviceTokens(ctx context.Context, userID string, server
 		return fmt.Errorf("server name %s does not match %s", domain, serverName)
 	}
 	return d.Writer.Do(d.DB, nil, func(txn *sql.Tx) error {
-		return d.DevicesTable.UpdateDeviceTokens(ctx, txn, localpart, serverName, deviceID, accessToken, refreshToken)
+		return d.Devices.UpdateDeviceTokens(ctx, txn, localpart, serverName, deviceID, accessToken, refreshToken)
 	})
 }
 
