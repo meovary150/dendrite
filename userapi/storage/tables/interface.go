@@ -49,15 +49,18 @@ type AccountsTable interface {
 type DevicesTable interface {
 	InsertDevice(ctx context.Context, txn *sql.Tx, id, localpart string, serverName spec.ServerName, accessToken string, displayName *string, ipAddr, userAgent string) (*api.Device, error)
 	InsertDeviceWithSessionID(ctx context.Context, txn *sql.Tx, id, localpart string, serverName spec.ServerName, accessToken string, displayName *string, ipAddr, userAgent string, sessionID int64) (*api.Device, error)
+	InsertDeviceWithRefreshToken(ctx context.Context, txn *sql.Tx, id, localpart string, serverName spec.ServerName, accessToken, refreshToken string, displayName *string, ipAddr, userAgent string) (*api.Device, error)
 	DeleteDevice(ctx context.Context, txn *sql.Tx, id, localpart string, serverName spec.ServerName) error
 	DeleteDevices(ctx context.Context, txn *sql.Tx, localpart string, serverName spec.ServerName, devices []string) error
 	DeleteDevicesByLocalpart(ctx context.Context, txn *sql.Tx, localpart string, serverName spec.ServerName, exceptDeviceID string) error
 	UpdateDeviceName(ctx context.Context, txn *sql.Tx, localpart string, serverName spec.ServerName, deviceID string, displayName *string) error
 	SelectDeviceByToken(ctx context.Context, accessToken string) (*api.Device, error)
+	SelectDeviceByRefreshToken(ctx context.Context, refreshToken string) (*api.Device, error)
 	SelectDeviceByID(ctx context.Context, localpart string, serverName spec.ServerName, deviceID string) (*api.Device, error)
 	SelectDevicesByLocalpart(ctx context.Context, txn *sql.Tx, localpart string, serverName spec.ServerName, exceptDeviceID string) ([]api.Device, error)
 	SelectDevicesByID(ctx context.Context, deviceIDs []string) ([]api.Device, error)
 	UpdateDeviceLastSeen(ctx context.Context, txn *sql.Tx, localpart string, serverName spec.ServerName, deviceID, ipAddr, userAgent string) error
+	UpdateDeviceTokens(ctx context.Context, txn *sql.Tx, localpart string, serverName spec.ServerName, deviceID, accessToken, refreshToken string) error
 }
 
 type KeyBackupTable interface {

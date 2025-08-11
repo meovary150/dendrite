@@ -106,6 +106,10 @@ func NewSQLiteDevicesTable(db *sql.DB, serverName spec.ServerName) (tables.Devic
 		Version: "userapi: add last_seen_ts",
 		Up:      deltas.UpLastSeenTSIP,
 	})
+	m.AddMigrations(sqlutil.Migration{
+		Version: "userapi: add refresh_token",
+		Up:      deltas.UpRefreshTokens,
+	})
 	if err = m.Up(context.Background()); err != nil {
 		return nil, err
 	}
@@ -359,5 +363,11 @@ func (s *devicesStatements) UpdateDeviceLastSeen(ctx context.Context, txn *sql.T
 	lastSeenTs := time.Now().UnixNano() / 1000000
 	stmt := sqlutil.TxStmt(txn, s.updateDeviceLastSeenStmt)
 	_, err := stmt.ExecContext(ctx, lastSeenTs, ipAddr, userAgent, localpart, serverName, deviceID)
+	return err
+}
+
+func (s *devicesStatements) UpdateDeviceTokens(ctx context.Context, txn *sql.Tx, localpart string, serverName spec.ServerName, deviceID, accessToken, refreshToken string) error {
+	stmt := sqlutil.TxStmt(txn, s.updateDeviceTokensStmt)
+	_, err := stmt.ExecContext(ctx, accessToken, refreshToken, localpart, serverName, deviceID)
 	return err
 }

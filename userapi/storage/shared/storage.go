@@ -703,19 +703,34 @@ func (d *Database) CreateDeviceWithRefreshToken(
 }
 
 func (d *Database) QueryRefreshToken(ctx context.Context, refreshToken string) (*api.Device, error) {
-	return nil, fmt.Errorf("refresh token validation not implemented")
+	return d.DevicesTable.SelectDeviceByRefreshToken(ctx, refreshToken)
 }
 
 func (d *Database) UpdateRefreshToken(ctx context.Context, deviceID, userID, oldRefreshToken, newAccessToken, newRefreshToken string) error {
-	return fmt.Errorf("refresh token update not implemented")
+	localpart, domain, err := gomatrixserverlib.SplitID('@', userID)
+	if err != nil {
+		return err
+	}
+	return d.Writer.Do(d.DB, nil, func(txn *sql.Tx) error {
+		return d.DevicesTable.UpdateDeviceTokens(ctx, txn, localpart, domain, deviceID, newAccessToken, newRefreshToken)
+	})
 }
 
 func (d *Database) GetDeviceByRefreshToken(ctx context.Context, refreshToken string) (*api.Device, error) {
-	return nil, fmt.Errorf("get device by refresh token not implemented")
+	return d.DevicesTable.SelectDeviceByRefreshToken(ctx, refreshToken)
 }
 
 func (d *Database) UpdateDeviceTokens(ctx context.Context, userID string, serverName spec.ServerName, deviceID, accessToken, refreshToken string) error {
-	return fmt.Errorf("update device tokens not implemented")
+	localpart, domain, err := gomatrixserverlib.SplitID('@', userID)
+	if err != nil {
+		return err
+	}
+	if domain != serverName {
+		return fmt.Errorf("server name %s does not match %s", domain, serverName)
+	}
+	return d.Writer.Do(d.DB, nil, func(txn *sql.Tx) error {
+		return d.DevicesTable.UpdateDeviceTokens(ctx, txn, localpart, serverName, deviceID, accessToken, refreshToken)
+	})
 }
 
 // generateDeviceID creates a new device id. Returns an error if failed to generate
