@@ -65,6 +65,7 @@ type AccountData interface {
 
 type Device interface {
 	GetDeviceByAccessToken(ctx context.Context, token string) (*api.Device, error)
+	GetDeviceByRefreshToken(ctx context.Context, token string) (*api.Device, error)
 	GetDeviceByID(ctx context.Context, localpart string, serverName spec.ServerName, deviceID string) (*api.Device, error)
 	GetDevicesByLocalpart(ctx context.Context, localpart string, serverName spec.ServerName) ([]api.Device, error)
 	GetDevicesByID(ctx context.Context, deviceIDs []string) ([]api.Device, error)
@@ -75,6 +76,10 @@ type Device interface {
 	// If no device ID is given one is generated.
 	// Returns the device on success.
 	CreateDevice(ctx context.Context, localpart string, serverName spec.ServerName, deviceID *string, accessToken string, displayName *string, ipAddr, userAgent string) (dev *api.Device, returnErr error)
+	// CreateDeviceWithRefreshToken creates a device with both access and refresh tokens
+	CreateDeviceWithRefreshToken(ctx context.Context, localpart string, serverName spec.ServerName, deviceID *string, accessToken, refreshToken string, displayName *string, ipAddr, userAgent string) (dev *api.Device, returnErr error)
+	// UpdateDeviceTokens updates both access and refresh tokens for a device
+	UpdateDeviceTokens(ctx context.Context, localpart string, serverName spec.ServerName, deviceID, accessToken, refreshToken string) error
 	UpdateDevice(ctx context.Context, localpart string, serverName spec.ServerName, deviceID string, displayName *string) error
 	UpdateDeviceLastSeen(ctx context.Context, localpart string, serverName spec.ServerName, deviceID, ipAddr, userAgent string) error
 	RemoveDevices(ctx context.Context, localpart string, serverName spec.ServerName, devices []string) error

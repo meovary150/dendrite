@@ -625,6 +625,7 @@ type OutputReceiptEvent struct {
 	EventID   string         `json:"event_id"`
 	Type      string         `json:"type"`
 	Timestamp spec.Timestamp `json:"timestamp"`
+	ThreadID  *string        `json:"thread_id,omitempty"`
 }
 
 // OutputSendToDeviceEvent is an entry in the send-to-device output kafka log.

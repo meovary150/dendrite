@@ -20,19 +20,33 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type receiptContent struct {
+	ThreadID *string `json:"thread_id,omitempty"`
+}
+
 func SetReceipt(req *http.Request, userAPI userapi.ClientUserAPI, syncProducer *producers.SyncAPIProducer, device *userapi.Device, roomID, receiptType, eventID string) util.JSONResponse {
 	timestamp := spec.AsTimestamp(time.Now())
+	
+	var content receiptContent
+	var threadID *string
+	if req.Body != nil {
+		if err := json.NewDecoder(req.Body).Decode(&content); err == nil {
+			threadID = content.ThreadID
+		}
+	}
+	
 	logrus.WithFields(logrus.Fields{
 		"roomID":      roomID,
 		"receiptType": receiptType,
 		"eventID":     eventID,
 		"userId":      device.UserID,
 		"timestamp":   timestamp,
+		"threadID":    threadID,
 	}).Debug("Setting receipt")
 
 	switch receiptType {
 	case "m.read", "m.read.private":
-		if err := syncProducer.SendReceipt(req.Context(), device.UserID, roomID, eventID, receiptType, timestamp); err != nil {
+		if err := syncProducer.SendReceipt(req.Context(), device.UserID, roomID, eventID, receiptType, timestamp, threadID); err != nil {
 			return util.ErrorResponse(err)
 		}
 

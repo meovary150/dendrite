@@ -109,6 +109,8 @@ type ClientUserAPI interface {
 	QueryLocalpartForThreePID(ctx context.Context, req *QueryLocalpartForThreePIDRequest, res *QueryLocalpartForThreePIDResponse) error
 	PerformForgetThreePID(ctx context.Context, req *PerformForgetThreePIDRequest, res *struct{}) error
 	PerformSaveThreePIDAssociation(ctx context.Context, req *PerformSaveThreePIDAssociationRequest, res *struct{}) error
+	QueryRefreshToken(ctx context.Context, req *QueryRefreshTokenRequest, res *QueryRefreshTokenResponse) error
+	PerformRefreshTokenUpdate(ctx context.Context, req *PerformRefreshTokenUpdateRequest, res *PerformRefreshTokenUpdateResponse) error
 }
 
 type KeyBackupAPI interface {
@@ -358,6 +360,8 @@ type PerformDeviceCreationRequest struct {
 	Localpart   string
 	ServerName  spec.ServerName // optional: if blank, default server name used
 	AccessToken string          // optional: if blank one will be made on your behalf
+	// optional: refresh token for this device session
+	RefreshToken string
 	// optional: if nil an ID is generated for you. If set, replaces any existing device session,
 	// which will generate a new access token and invalidate the old one.
 	DeviceID *string
@@ -422,6 +426,8 @@ type Device struct {
 	// The access_token granted to this device.
 	// This uniquely identifies the device from all other devices and clients.
 	AccessToken string
+	// The refresh_token granted to this device for refreshing access tokens.
+	RefreshToken string
 	// The unique ID of the session identified by the access token.
 	// Can be used as a secure substitution in places where data needs to be
 	// associated with access tokens.
@@ -643,6 +649,27 @@ type QueryAccountByLocalpartRequest struct {
 
 type QueryAccountByLocalpartResponse struct {
 	Account *Account
+}
+
+type QueryRefreshTokenRequest struct {
+	RefreshToken string
+}
+
+type QueryRefreshTokenResponse struct {
+	Device *Device
+	Err    string
+}
+
+type PerformRefreshTokenUpdateRequest struct {
+	DeviceID        string
+	UserID          string
+	OldRefreshToken string
+	NewAccessToken  string
+	NewRefreshToken string
+}
+
+type PerformRefreshTokenUpdateResponse struct {
+	TokenUpdated bool
 }
 
 // API functions required by the clientapi

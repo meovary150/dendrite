@@ -970,4 +970,31 @@ func (a *UserInternalAPI) PerformSaveThreePIDAssociation(ctx context.Context, re
 	return a.DB.SaveThreePIDAssociation(ctx, req.ThreePID, req.Localpart, req.ServerName, req.Medium)
 }
 
+func (a *UserInternalAPI) QueryRefreshToken(ctx context.Context, req *api.QueryRefreshTokenRequest, res *api.QueryRefreshTokenResponse) error {
+	device, err := a.DB.GetDeviceByRefreshToken(ctx, req.RefreshToken)
+	if err != nil {
+		return err
+	}
+	res.Device = device
+	return nil
+}
+
+func (a *UserInternalAPI) PerformRefreshTokenUpdate(ctx context.Context, req *api.PerformRefreshTokenUpdateRequest, res *api.PerformRefreshTokenUpdateResponse) error {
+	_, domain, err := gomatrixserverlib.SplitID('@', req.UserID)
+	if err != nil {
+		return err
+	}
+	if !a.Config.Matrix.IsLocalServerName(domain) {
+		return fmt.Errorf("server name %s is not local", domain)
+	}
+	
+	err = a.DB.UpdateDeviceTokens(ctx, req.UserID, domain, req.DeviceID, req.NewAccessToken, req.NewRefreshToken)
+	if err != nil {
+		return err
+	}
+	
+	res.TokenUpdated = true
+	return nil
+}
+
 const pushRulesAccountDataType = "m.push_rules"
