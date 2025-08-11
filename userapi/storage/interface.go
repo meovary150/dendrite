@@ -78,6 +78,9 @@ type Device interface {
 	CreateDevice(ctx context.Context, localpart string, serverName spec.ServerName, deviceID *string, accessToken string, displayName *string, ipAddr, userAgent string) (dev *api.Device, returnErr error)
 	// CreateDeviceWithRefreshToken creates a device with both access and refresh tokens
 	CreateDeviceWithRefreshToken(ctx context.Context, localpart string, serverName spec.ServerName, deviceID *string, accessToken, refreshToken string, displayName *string, ipAddr, userAgent string) (dev *api.Device, returnErr error)
+	QueryRefreshToken(ctx context.Context, refreshToken string) (*api.Device, error)
+	// UpdateRefreshToken updates the refresh token for a device
+	UpdateRefreshToken(ctx context.Context, deviceID, userID, oldRefreshToken, newAccessToken, newRefreshToken string) error
 	// UpdateDeviceTokens updates both access and refresh tokens for a device
 	UpdateDeviceTokens(ctx context.Context, localpart string, serverName spec.ServerName, deviceID, accessToken, refreshToken string) error
 	UpdateDevice(ctx context.Context, localpart string, serverName spec.ServerName, deviceID string, displayName *string) error
