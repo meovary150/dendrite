@@ -84,9 +84,25 @@ func Setup(
 	userInteractiveAuth := auth.NewUserInteractive(userAPI, cfg)
 
 	unstableFeatures := map[string]bool{
-		"org.matrix.e2e_cross_signing": true,
-		"org.matrix.msc2285.stable":    true,
-		"org.matrix.msc3916.stable":    true,
+		"org.matrix.e2e_cross_signing":           true,
+		"org.matrix.msc2285.stable":              true,
+		"org.matrix.msc3916.stable":              true,
+		"org.matrix.msc2836":                     true,
+		"org.matrix.msc3771.stable":              true,
+		"org.matrix.msc3440.stable":              true,
+		"org.matrix.msc3575":                     true,
+		"org.matrix.msc3202":                     true,
+		"org.matrix.msc2946":                     true,
+		"org.matrix.msc3030":                     true,
+		"org.matrix.msc2432":                     true,
+		"org.matrix.msc3881":                     true,
+		"org.matrix.msc3882":                     true,
+		"org.matrix.msc3890":                     true,
+		"org.matrix.msc3912":                     true,
+		"org.matrix.msc3981":                     true,
+		"org.matrix.msc4028":                     true,
+		"org.matrix.msc4140":                     true,
+		"org.matrix.msc4151":                     true,
 	}
 	for _, msc := range cfg.MSCs.MSCs {
 		unstableFeatures["org.matrix."+msc] = true
@@ -140,6 +156,8 @@ func Setup(
 					"v1.0",
 					"v1.1",
 					"v1.2",
+					"v1.3",
+					"v1.4",
 				}, UnstableFeatures: unstableFeatures},
 			}
 		}),
@@ -723,6 +741,15 @@ func Setup(
 			return Login(req, userAPI, cfg)
 		}),
 	).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
+
+	v3mux.Handle("/refresh",
+		httputil.MakeExternalAPI("refresh", func(req *http.Request) util.JSONResponse {
+			if r := rateLimits.Limit(req, nil); r != nil {
+				return *r
+			}
+			return Refresh(req, userAPI, cfg)
+		}),
+	).Methods(http.MethodPost, http.MethodOptions)
 
 	v3mux.Handle("/auth/{authType}/fallback/web",
 		httputil.MakeHTTPAPI("auth_fallback", userAPI, enableMetrics, func(w http.ResponseWriter, req *http.Request) {

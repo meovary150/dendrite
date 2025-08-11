@@ -691,6 +691,33 @@ func (d *Database) CreateDevice(
 	return dev, returnErr
 }
 
+func (d *Database) CreateDeviceWithRefreshToken(
+	ctx context.Context, localpart string, serverName spec.ServerName,
+	deviceID *string, accessToken, refreshToken string, displayName *string, ipAddr, userAgent string,
+) (dev *api.Device, returnErr error) {
+	dev, returnErr = d.CreateDevice(ctx, localpart, serverName, deviceID, accessToken, displayName, ipAddr, userAgent)
+	if returnErr == nil && dev != nil {
+		dev.RefreshToken = refreshToken
+	}
+	return
+}
+
+func (d *Database) QueryRefreshToken(ctx context.Context, refreshToken string) (*api.Device, error) {
+	return nil, fmt.Errorf("refresh token validation not implemented")
+}
+
+func (d *Database) UpdateRefreshToken(ctx context.Context, deviceID, userID, oldRefreshToken, newAccessToken, newRefreshToken string) error {
+	return fmt.Errorf("refresh token update not implemented")
+}
+
+func (d *Database) GetDeviceByRefreshToken(ctx context.Context, refreshToken string) (*api.Device, error) {
+	return nil, fmt.Errorf("get device by refresh token not implemented")
+}
+
+func (d *Database) UpdateDeviceTokens(ctx context.Context, userID string, serverName spec.ServerName, deviceID, accessToken, refreshToken string) error {
+	return fmt.Errorf("update device tokens not implemented")
+}
+
 // generateDeviceID creates a new device id. Returns an error if failed to generate
 // random bytes.
 func generateDeviceID() (string, error) {
