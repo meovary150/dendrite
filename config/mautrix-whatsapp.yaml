@@ -1,0 +1,257 @@
+# Mautrix-WhatsApp Bridge Configuration
+
+# Homeserver details
+homeserver:
+  # The address that this appservice can use to connect to the homeserver
+  address: http://dendrite:8008
+  # The domain of the homeserver
+  domain: api.yifanyiscrm.com
+  # Should the bridge use https to connect to the homeserver?
+  verify_ssl: false
+  # Connection pool settings
+  http_retry_count: 4
+  status_endpoint: null
+  message_send_checkpoint_endpoint: null
+  async_media: false
+
+# Application service host/registration related details
+appservice:
+  # The address that the homeserver can use to connect to this appservice
+  address: http://mautrix-whatsapp:29318
+  # The hostname and port where this appservice should listen
+  hostname: 0.0.0.0
+  port: 29318
+  # The maximum body size of appservice API requests from the homeserver
+  max_body_size: 1
+  
+  # Database configuration
+  database:
+    type: postgres
+    uri: postgresql://dendrite:dendrite_secure_password@postgres/mautrix_whatsapp?sslmode=disable
+    max_open_conns: 20
+    max_idle_conns: 2
+    max_conn_idle_time: null
+    max_conn_lifetime: null
+  
+  # Unique ID for this appservice
+  id: whatsapp
+  # Bot details
+  bot:
+    username: whatsappbot
+    displayname: WhatsApp bridge bot
+    avatar: mxc://maunium.net/NeXNQarUbrlYBiPCpprYsRqr
+  
+  # Authentication tokens
+  as_token: "c3a3fbfee60b3acecd2431fef34019e7c689382278a4447f6a87044dae528cb8"
+  hs_token: "02e586ddff3bfb686b89c42f3249bf041e6cf35696c649bb539886c9217cd39e"
+  
+  # Ephemeral events
+  ephemeral_events:
+    enabled: true
+    types:
+      - m.typing
+      - m.receipt
+      - m.presence
+
+# Bridge config
+bridge:
+  # Username template for WhatsApp users
+  username_template: "whatsapp_{{.}}"
+  # Display name template
+  displayname_template: "{{if .BusinessName}}{{.BusinessName}}{{else if .PushName}}{{.PushName}}{{else}}{{.JID}}{{end}} (WA)"
+  
+  # Personal filtering spaces
+  personal_filtering_spaces: false
+  delivery_receipts: true
+  message_status_events: true
+  message_error_notices: true
+  
+  # Portal message buffer
+  portal_message_buffer: 128
+  
+  # Call start notices
+  call_start_notices: true
+  
+  # Identity change notices
+  identity_change_notices: true
+  
+  # Reaction settings
+  reaction_shortcodes: true
+  
+  # History sync
+  history_sync:
+    request_full_sync: true
+    full_sync_config:
+      days_limit: 30
+      size_mb_limit: 100
+      storage_quota_mb: null
+    media_requests:
+      auto_request_media: true
+      request_method: immediate
+      request_local_time: 120
+    max_initial_conversations: -1
+    unread_hours_threshold: 0
+    immediate:
+      worker_count: 1
+      max_events: 10
+    deferred:
+      - start_days_ago: 7
+        max_batch_events: 20
+        batch_delay: 5
+      - start_days_ago: 30
+        max_batch_events: 50
+        batch_delay: 10
+  
+  # User avatar sync
+  user_avatar_sync: true
+  
+  # Bridge matrix leave
+  bridge_matrix_leave: true
+  
+  # Double puppet - 自动启用双傀儡模式
+  double_puppet_server_map:
+    api.yifanyiscrm.com: https://api.yifanyiscrm.com
+  double_puppet_allow_discovery: true
+  login_shared_secret_map:
+    api.yifanyiscrm.com: "f6cc9bcee3d474517feb23d636d1e0bf4b89315b53547d26bae2550b3c9364a3"
+  # 自动为新用户创建双傀儡
+  double_puppet_backfill: true
+  # 允许双傀儡发送消息
+  double_puppet_allow_puppet: true
+  
+  # Private chat settings
+  private_chat_portal_meta: true
+  parallel_member_sync: false
+  
+  # Bridge notices
+  bridge_notices: true
+  
+  # Resend bridge info
+  resend_bridge_info: false
+  
+  # Mute bridging
+  mute_bridging: false
+  
+  # Archive tag
+  archive_tag: null
+  pinned_tag: null
+  
+  # Tag only on create
+  tag_only_on_create: true
+  
+  # Mark read only on create
+  mark_read_only_on_create: true
+  
+  # Enable status broadcast
+  enable_status_broadcast: true
+  
+  # Mute status broadcast
+  mute_status_broadcast: true
+  
+  # Status broadcast tag
+  status_broadcast_tag: m.lowpriority
+  
+  # WhatsApp message send timeout
+  message_send_timeout: 60s
+  
+  # Disable bridge alerts
+  disable_bridge_alerts: false
+  
+  # Crash on stream replaced
+  crash_on_stream_replaced: false
+  
+  # URL previews
+  url_previews: true
+  
+  # Caption in message
+  caption_in_message: false
+  
+  # Extev polls
+  extev_polls: false
+  
+  # Cross room replies
+  cross_room_replies: false
+  
+  # Disable reply fallback
+  disable_reply_fallback: false
+  
+  # Message handling during temporary disconnect
+  message_handling_during_temporary_disconnect:
+    ignore_failover_backoff: false
+    set_notices: true
+    default_disable_notifications: false
+    error_after: null
+    deadline: 120s
+  
+  # Disable bridge info delete
+  disable_bridge_info_delete: false
+  
+  # Disable portal state copy
+  disable_portal_state_copy: false
+  
+  # Send whatsapp edits
+  send_whatsapp_edits: false
+  
+  # Permissions
+  permissions:
+    "*": relay
+    "api.yifanyiscrm.com": user
+    "@admin:api.yifanyiscrm.com": admin
+  
+  # Relay
+  relay:
+    enabled: false
+    admin_only: true
+    message_formats:
+      m.text: "<b>{{ .Sender.Displayname }}</b>: {{ .Message }}"
+      m.notice: "<b>{{ .Sender.Displayname }}</b>: {{ .Message }}"
+      m.emote: "* <b>{{ .Sender.Displayname }}</b> {{ .Message }}"
+      m.file: "<b>{{ .Sender.Displayname }}</b> sent a file"
+      m.image: "<b>{{ .Sender.Displayname }}</b> sent an image"
+      m.audio: "<b>{{ .Sender.Displayname }}</b> sent an audio file"
+      m.video: "<b>{{ .Sender.Displayname }}</b> sent a video"
+      m.location: "<b>{{ .Sender.Displayname }}</b> sent a location"
+
+# Encryption
+encryption:
+  allow: true
+  default: false
+  require: false
+  appservice: false
+  allow_key_sharing: true
+  pickle_key: ""
+  delete_keys:
+    delete_outbound_on_ack: false
+    dont_store_outbound: false
+    ratchet_on_decrypt: false
+    delete_fully_used_on_decrypt: false
+    delete_prev_on_new_session: false
+    delete_on_device_delete: false
+    periodically_delete_expired: false
+    delete_outdated_inbound: false
+  verification_levels:
+    receive: unverified
+    send: unverified
+    share: cross-signed-tofu
+  rotation:
+    enable_custom: false
+    milliseconds: 604800000
+    messages: 100
+    disable_device_change_key_rotation: false
+
+# Provisioning API
+provisioning:
+  enabled: true
+  prefix: /_matrix/provision
+  shared_secret: "5ff24681bfad80043a82a06e26c05b0cacac10a5cfd93452454ab81a3919cb4b"
+  debug_endpoints: false
+
+# Logging config
+logging:
+  min_level: debug
+  writers:
+    - type: stdout
+      format: pretty-colored
+    - type: file
+      format: json
+      filename: /data/bridge.log

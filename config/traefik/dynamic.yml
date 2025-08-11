@@ -1,0 +1,96 @@
+# Traefik Dynamic Configuration
+
+http:
+  middlewares:
+    # CORS middleware for Matrix federation
+    cors-headers:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - OPTIONS
+          - PUT
+          - POST
+          - DELETE
+        accessControlAllowHeaders:
+          - "*"
+        accessControlAllowOriginList:
+          - "*"
+        accessControlMaxAge: 100
+        addVaryHeader: true
+    
+    # Security headers
+    security-headers:
+      headers:
+        frameDeny: true
+        sslRedirect: true
+        browserXssFilter: true
+        contentTypeNosniff: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+        customFrameOptionsValue: "SAMEORIGIN"
+        contentSecurityPolicy: "default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';"
+    
+    # Rate limiting
+    rate-limit:
+      rateLimit:
+        average: 100
+        burst: 200
+        period: 1s
+    
+    # Compression
+    compress:
+      compress: true
+    
+    # Matrix well-known redirects
+    matrix-well-known:
+      redirectRegex:
+        regex: "^https://api.yifanyiscrm.com/.well-known/matrix/(.*)"
+        replacement: "https://api.yifanyiscrm.com/_matrix/$1"
+        permanent: false
+
+  routers:
+    # Matrix well-known files
+    matrix-wellknown-server:
+      rule: "Host(`api.yifanyiscrm.com`) && Path(`/.well-known/matrix/server`)"
+      service: matrix-wellknown-server
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+    
+    matrix-wellknown-client:
+      rule: "Host(`api.yifanyiscrm.com`) && Path(`/.well-known/matrix/client`)"
+      service: matrix-wellknown-client
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+
+  services:
+    # Matrix well-known services
+    matrix-wellknown-server:
+      loadBalancer:
+        servers:
+          - url: "http://wellknown-service:8080"
+    
+    matrix-wellknown-client:
+      loadBalancer:
+        servers:
+          - url: "http://wellknown-service:8080"
+
+tls:
+  options:
+    default:
+      minVersion: VersionTLS12
+      cipherSuites:
+        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
+        - TLS_AES_128_GCM_SHA256
+        - TLS_AES_256_GCM_SHA384
+        - TLS_CHACHA20_POLY1305_SHA256
+      curvePreferences:
+        - CurveP521
+        - CurveP384
+      sniStrict: true

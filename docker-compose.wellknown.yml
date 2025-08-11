@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  wellknown-service:
+    image: nginx:alpine
+    container_name: wellknown-service
+    volumes:
+      - ./config/wellknown:/usr/share/nginx/html/.well-known/matrix:ro
+    networks:
+      - dendrite-network

@@ -1,0 +1,13 @@
+id: whatsapp
+url: http://mautrix-whatsapp:29318
+as_token: c3a3fbfee60b3acecd2431fef34019e7c689382278a4447f6a87044dae528cb8
+hs_token: 02e586ddff3bfb686b89c42f3249bf041e6cf35696c649bb539886c9217cd39e
+sender_localpart: whatsappbot
+rate_limited: false
+namespaces:
+  users:
+    - regex: ^@whatsapp_[0-9]+:api\.yifanyiscrm\.com$
+      exclusive: true
+  aliases:
+    - regex: ^#whatsapp_[0-9]+:api\.yifanyiscrm\.com$
+      exclusive: true

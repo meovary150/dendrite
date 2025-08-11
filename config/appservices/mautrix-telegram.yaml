@@ -1,0 +1,13 @@
+id: telegram
+url: http://mautrix-telegram:29317
+as_token: e7a3fbfee60b3acecd2431fef34019e7c689382278a4447f6a87044dae528cb9
+hs_token: 12e586ddff3bfb686b89c42f3249bf041e6cf35696c649bb539886c9217cd39f
+sender_localpart: telegrambot
+rate_limited: false
+namespaces:
+  users:
+    - regex: ^@telegram_[0-9]+:api\.yifanyiscrm\.com$
+      exclusive: true
+  aliases:
+    - regex: ^#telegram_[0-9]+:api\.yifanyiscrm\.com$
+      exclusive: true

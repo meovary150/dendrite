@@ -81,3 +81,22 @@ go.work*
 
 # helm chart
 helm/dendrite/charts/
+
+# Docker runtime data
+data/
+postgres_data/
+dendrite_keys/
+whatsapp_data/
+telegram_data/
+
+# Configuration backups
+config/*-base.yaml
+config/*-example.yaml
+config/telegram-example.yaml
+config/mautrix-telegram-base.yaml
+
+# Traefik certificates
+acme.json
+
+# Request files
+request.json

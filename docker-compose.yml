@@ -1,0 +1,170 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: dendrite-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: dendrite
+      POSTGRES_PASSWORD: dendrite_secure_password
+      POSTGRES_DB: dendrite
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - dendrite-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dendrite"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Dendrite Matrix Server
+  dendrite:
+    build:
+      context: .
+      dockerfile: Dockerfile.dendrite
+    container_name: dendrite-server
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./config/dendrite.yaml:/etc/dendrite/dendrite.yaml:ro
+      - ./config/appservices:/etc/dendrite/appservices:ro
+      - ./data/dendrite/media:/var/dendrite/media
+      - ./data/dendrite/search:/var/dendrite/search
+      - dendrite_keys:/var/dendrite/keys
+    networks:
+      - dendrite-network
+    labels:
+      - "traefik.enable=true"
+      # Client API
+      - "traefik.http.routers.dendrite.rule=Host(`api.yifanyiscrm.com`)"
+      - "traefik.http.routers.dendrite.entrypoints=websecure"
+      - "traefik.http.routers.dendrite.tls=true"
+      - "traefik.http.routers.dendrite.tls.certresolver=letsencrypt"
+      - "traefik.http.services.dendrite.loadbalancer.server.port=8008"
+      # HTTP to HTTPS redirect
+      - "traefik.http.routers.dendrite-insecure.rule=Host(`api.yifanyiscrm.com`)"
+      - "traefik.http.routers.dendrite-insecure.entrypoints=web"
+      - "traefik.http.routers.dendrite-insecure.middlewares=redirect-to-https"
+    environment:
+      DENDRITE_CONFIG: /etc/dendrite/dendrite.yaml
+
+  # WhatsApp Bridge
+  mautrix-whatsapp:
+    image: dock.mau.dev/mautrix/whatsapp:latest
+    container_name: mautrix-whatsapp
+    restart: always
+    depends_on:
+      - dendrite
+      - postgres
+    volumes:
+      - ./config/mautrix-whatsapp.yaml:/data/config.yaml:ro
+      - whatsapp_data:/data
+    networks:
+      - dendrite-network
+    environment:
+      UID: 1000
+      GID: 1000
+
+  # Telegram Bridge
+  mautrix-telegram:
+    image: dock.mau.dev/mautrix/telegram:latest
+    container_name: mautrix-telegram
+    restart: always
+    depends_on:
+      - dendrite
+      - postgres
+    volumes:
+      - ./config/mautrix-telegram.yaml:/data/config.yaml:ro
+      - telegram_data:/data
+    networks:
+      - dendrite-network
+    environment:
+      UID: 1000
+      GID: 1000
+
+  # Element Web Client
+  element-web:
+    image: vectorim/element-web:latest
+    container_name: element-web
+    restart: always
+    volumes:
+      - ./config/element-config.json:/app/config.json:ro
+    networks:
+      - dendrite-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.element.rule=Host(`app.yifanyiscrm.com`)"
+      - "traefik.http.routers.element.entrypoints=websecure"
+      - "traefik.http.routers.element.tls=true"
+      - "traefik.http.routers.element.tls.certresolver=letsencrypt"
+      - "traefik.http.services.element.loadbalancer.server.port=80"
+      # Redirect HTTP to HTTPS
+      - "traefik.http.routers.element-insecure.rule=Host(`app.yifanyiscrm.com`)"
+      - "traefik.http.routers.element-insecure.entrypoints=web"
+      - "traefik.http.routers.element-insecure.middlewares=redirect-to-https"
+
+  # Traefik Reverse Proxy
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    restart: always
+    command:
+      # API and Dashboard
+      - "--api.dashboard=true"
+      - "--api.debug=true"
+      # Providers
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=dendrite-network"
+      # Entrypoints
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.federation.address=:8448"
+      # Let's Encrypt
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=admin@yifanyiscrm.com"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      # Use staging for testing (remove for production)
+      #- "--certificatesresolvers.letsencrypt.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+      # Logging
+      - "--log.level=INFO"
+      - "--accesslog=true"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8448:8448"  # Matrix Federation
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./data/traefik/letsencrypt:/letsencrypt"
+      - "./config/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro"
+    networks:
+      - dendrite-network
+    labels:
+      - "traefik.enable=true"
+      # Redirect HTTP to HTTPS globally
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
+      # Security headers
+      - "traefik.http.middlewares.security-headers.headers.frameDeny=true"
+      - "traefik.http.middlewares.security-headers.headers.sslRedirect=true"
+      - "traefik.http.middlewares.security-headers.headers.browserXssFilter=true"
+      - "traefik.http.middlewares.security-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.security-headers.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.security-headers.headers.stsPreload=true"
+      - "traefik.http.middlewares.security-headers.headers.stsSeconds=31536000"
+
+networks:
+  dendrite-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  dendrite_keys:
+  whatsapp_data:
+  telegram_data:

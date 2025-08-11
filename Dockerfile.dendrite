@@ -1,0 +1,46 @@
+# Build stage
+# ---- build stage ----
+ARG GO_VERSION=1.23.1
+FROM golang:${GO_VERSION}-bookworm AS build
+
+# 确保允许自动工具链（或干脆不设）
+ENV GOTOOLCHAIN=auto
+
+WORKDIR /build
+
+# Copy go mod files
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build Dendrite with static linking for Alpine
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/dendrite ./cmd/dendrite
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/create-account ./cmd/create-account
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/generate-keys ./cmd/generate-keys
+
+# Runtime stage
+FROM alpine:latest
+
+RUN apk add --no-cache ca-certificates
+
+WORKDIR /dendrite
+
+# Copy binaries from build stage
+COPY --from=build /build/bin/dendrite /usr/local/bin/dendrite
+COPY --from=build /build/bin/create-account /usr/local/bin/create-account
+COPY --from=build /build/bin/generate-keys /usr/local/bin/generate-keys
+
+# Make binaries executable
+RUN chmod +x /usr/local/bin/dendrite /usr/local/bin/create-account /usr/local/bin/generate-keys
+
+# Create necessary directories
+RUN mkdir -p /var/dendrite/media /var/dendrite/search /var/dendrite/keys /etc/dendrite
+
+# Generate signing keys
+RUN /usr/local/bin/generate-keys --private-key /var/dendrite/keys/matrix_key.pem
+
+EXPOSE 8008 8448
+
+CMD ["dendrite", "--config", "/etc/dendrite/dendrite.yaml"]

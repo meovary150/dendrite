@@ -1,0 +1,246 @@
+# Mautrix-Telegram bridge configuration
+# Updated for Dendrite with double puppeting enabled by default
+
+# Homeserver details
+homeserver:
+    # The address that this appservice can use to connect to the homeserver
+    address: http://dendrite:8008
+    # The domain of the homeserver
+    domain: api.yifanyiscrm.com
+    # Whether or not to verify the SSL certificate of the homeserver.
+    verify_ssl: false
+    # The URL to push real-time bridge status to.
+    status_endpoint: null
+    # Application service host/registration information.
+    message_send_checkpoint_endpoint: null
+    # Whether or not to use async uploads via MSC2246.
+    async_media: false
+
+# Application service host/registration related details
+appservice:
+    # The address that the homeserver can use to connect to this appservice.
+    address: http://mautrix-telegram:29317
+    # The hostname and port where this appservice should listen.
+    hostname: 0.0.0.0
+    port: 29317
+    # The maximum body size of appservice API requests (from the homeserver) in mebibytes
+    max_body_size: 1
+    
+    # Database config
+    database: postgresql://dendrite:dendrite_secure_password@postgres/mautrix_telegram?sslmode=disable
+    
+    # Public part of web server for out-of-Matrix interaction with the bridge.
+    public:
+        enabled: false
+        prefix: /public
+        external: https://api.yifanyiscrm.com/public
+    
+    # Provisioning API part of the web server for automated portal creation and fetching information.
+    provisioning:
+        enabled: false
+        prefix: /_matrix/provision
+        shared_secret: null
+    
+    # The unique ID of this appservice.
+    id: telegram
+    # Username of the appservice bot.
+    bot_username: telegrambot
+    # Display name and avatar for bot. Set to "remove" to remove display name/avatar, leave empty
+    # to leave display name/avatar as-is.
+    bot_displayname: Telegram bridge bot
+    bot_avatar: mxc://maunium.net/tJCRmUyJDsgRNgqhOgoiHWbX
+    
+    # Whether or not to receive ephemeral events via appservice transactions.
+    ephemeral_events:
+        enabled: true
+        types:
+            - m.typing
+            - m.receipt
+            - m.presence
+    
+    # Authentication tokens for AS <-> HS communication.
+    as_token: "e7a3fbfee60b3acecd2431fef34019e7c689382278a4447f6a87044dae528cb9"
+    hs_token: "12e586ddff3bfb686b89c42f3249bf041e6cf35696c649bb539886c9217cd39f"
+
+# Prometheus telemetry config
+metrics:
+    enabled: false
+
+# Manhole config
+manhole:
+    enabled: false
+
+# Bridge config
+bridge:
+    # Localpart template of MXIDs for Telegram users.
+    username_template: "telegram_{userid}"
+    # Displayname template for Telegram users.
+    displayname_template: "{displayname} (TG)"
+    # Set the preferred order of displayname sources for the displayname_template.
+    displayname_preference:
+        - full_name
+        - username
+        - phone_number
+    # Maximum length of displayname
+    displayname_max_length: 100
+    
+    # Whether to allow contact list access for finding existing Matrix users
+    allow_contact_info: true
+    
+    # Maximum number of members to sync per portal when starting up.
+    max_initial_member_sync: 100
+    # Whether or not to sync the member list in channels. If no channel admins have logged into the bridge, the bridge
+    # won't be able to sync the member list regardless of this setting.
+    sync_channel_members: true
+    # Whether or not to skip deleted members when syncing members.
+    skip_deleted_members: true
+    # Whether or not to automatically synchronize contacts and chats of Matrix users logged into the bridge
+    startup_sync: true
+    # Number of most recently active dialogs to check when syncing chats.
+    sync_update_limit: 0
+    # Number of most recently active dialogs to create portals for when syncing chats.
+    sync_create_limit: 15
+    # Should all chats be scheduled to be created later?
+    sync_deferred_create_all: false
+    # The maximum number of simultaneous Telegram forwarded backfills to do per room.
+    max_telegram_delete: 10
+    # Whether or not to sync direct chats at startup.
+    sync_direct_chats: false
+    # Whether or not to bridge channels and supergroups at all.
+    sync_chat_list: true
+    # Whether or not to listen to the Telegram status of account that was used to log in to the bridge.
+    sync_with_custom_puppets: true
+    # Whether or not to sync the chat list when the user logs into the bridge and when the connection is reestablished after a disconnect.
+    sync_on_user_login: true
+    # Filters for automatic portal creation after login
+    filter:
+        # Filter mode to use. Either "whitelist" or "blacklist".
+        mode: blacklist
+        # Filters to apply to the list of chats.
+        list: []
+    
+    # The prefix for commands.
+    command_prefix: "!tg"
+    
+    # End-to-bridge encryption support options.
+    encryption:
+        # Allow encryption, work in group chat rooms with e2ee enabled
+        allow: false
+        # Default to encryption, force-enable encryption in all portals the bridge creates
+        default: false
+        # Require encryption, drop any unencrypted messages.
+        require: false
+        # Enable key sharing? If enabled, key requests for rooms where users are in will be fulfilled.
+        allow_key_sharing: false
+        # Whether or not to explicitly set the avatar and room name for private chat portal rooms.
+        plaintext_mentions: false
+        # Should only the prefix be in bold in usernames?
+        username_in_mentions: false
+    
+    # Whether or not relay mode should be allowed.
+    relay_mode:
+        enabled: false
+        # Whether or not messages should be formatted with the sender's name even when the bridge has puppeted the user.
+        sender_on_own_events: false
+        # The formats to use when relaying messages to Telegram via webhooks.
+        # Available variables: $sender_displayname, $sender_username, $sender_mxid, $message, $room_name
+        message_formats:
+            m.text: "$sender_displayname: $message"
+            m.notice: "$sender_displayname: $message"
+            m.emote: "* $sender_displayname $message"
+            m.file: "$sender_displayname sent a file: $message"
+            m.image: "$sender_displayname sent an image: $message"
+            m.audio: "$sender_displayname sent audio: $message"
+            m.video: "$sender_displayname sent a video: $message"
+            m.location: "$sender_displayname sent a location: $message"
+    
+    # Permissions for using the bridge.
+    permissions:
+        "*": relaybot
+        "api.yifanyiscrm.com": user
+        "@admin:api.yifanyiscrm.com": admin
+    
+    # Options for the relaybot which is used for relaying messages in unbridged rooms.
+    relaybot:
+        # Whether or not authless portals should be allowed.
+        authless_portals: false
+        # Whether or not to make portals needed by the relaybot automatically.
+        autocreate_portals: true
+        # Whether or not to use /sync to get room members.
+        sync_room_members: false
+        # List of users to invite to portals when automatically creating them.
+        invite: []
+    
+    # Animated stickers conversion requires rlottie to be installed.
+    animated_sticker:
+        target: gif
+        args:
+            width: 256
+            height: 256
+            fps: 30               # only for webm
+            background: "020202"  # only for gif, transparency not supported
+    
+    # Enable double puppeting (default enabled)
+    double_puppet_server_map:
+        api.yifanyiscrm.com: https://api.yifanyiscrm.com
+    double_puppet_allow_discovery: true
+    # Shared secret for login shared secret map.
+    login_shared_secret_map:
+        api.yifanyiscrm.com: "f6cc9bcee3d474517feb23d636d1e0bf4b89315b53547d26bae2550b3c9364a3"
+
+# Telegram config  
+telegram:
+    # Get your own API keys from https://my.telegram.org/apps
+    # NOTE: You need to replace these with your own API keys!
+    # These are example keys and won't work
+    api_id: 17349
+    api_hash: 344583e45741c457fe1862106095a5eb
+    # Bot token is not needed when using double puppet
+    bot_token: disabled
+    # Whether or not to use a proxy for Telegram.
+    request_retry_delay: 2
+    # Device info
+    device_info:
+        device_model: mautrix-telegram
+        system_version: auto
+        app_version: auto
+        lang_code: en
+        system_lang_code: en
+    # Custom server to connect to
+    server:
+        # Set to true to use these server settings, otherwise the defaults are used
+        enabled: false
+        # The DC ID to connect to
+        dc: 2
+        # The IP to connect to
+        ip: 149.154.167.40
+        # The port to connect to
+        port: 443
+    # How long to wait for a normal MTProto request to finish before timing out.
+    timeout: 120
+    # How many times to retry a normal MTProto request if it fails.
+    request_retries: 5
+    
+# Python logging configuration
+logging:
+    version: 1
+    formatters:
+        colored:
+            (): mautrix_telegram.util.ColorFormatter
+            format: "[%(asctime)s] [%(levelname)s@%(name)s] %(message)s"
+        normal:
+            format: "[%(asctime)s] [%(levelname)s@%(name)s] %(message)s"
+    handlers:
+        console:
+            class: logging.StreamHandler
+            formatter: colored
+    loggers:
+        mau:
+            level: INFO
+        telethon:
+            level: INFO
+        aiohttp:
+            level: INFO
+    root:
+        level: INFO
+        handlers: [console]
