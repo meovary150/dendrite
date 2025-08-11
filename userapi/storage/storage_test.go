@@ -367,6 +367,54 @@ func Test_OpenID(t *testing.T) {
 		assert.InDelta(t, expiresAtMS, attributes.ExpiresAtMS, 2) // 2ms leeway
 	})
 }
+func Test_RefreshTokens(t *testing.T) {
+	alice := test.NewUser(t)
+	localpart, domain, err := gomatrixserverlib.SplitID('@', alice.ID)
+	assert.NoError(t, err)
+
+	test.WithAllDatabases(t, func(t *testing.T, dbType test.DBType) {
+		db, close := mustCreateUserDatabase(t, dbType)
+		defer close()
+
+		deviceID := util.RandomString(8)
+		accessToken := util.RandomString(16)
+		refreshToken := util.RandomString(16)
+
+		device, err := db.CreateDeviceWithRefreshToken(ctx, localpart, domain, &deviceID, accessToken, refreshToken, nil, "", "")
+		assert.NoError(t, err, "unable to create device with refresh token")
+		assert.Equal(t, refreshToken, device.RefreshToken)
+		assert.Equal(t, accessToken, device.AccessToken)
+		assert.Equal(t, deviceID, device.ID)
+
+		gotDevice, err := db.GetDeviceByRefreshToken(ctx, refreshToken)
+		assert.NoError(t, err, "unable to get device by refresh token")
+		assert.Equal(t, device.ID, gotDevice.ID)
+		assert.Equal(t, device.UserID, gotDevice.UserID)
+		assert.Equal(t, device.AccessToken, gotDevice.AccessToken)
+
+		gotDeviceQuery, err := db.QueryRefreshToken(ctx, refreshToken)
+		assert.NoError(t, err, "unable to query refresh token")
+		assert.Equal(t, device.ID, gotDeviceQuery.ID)
+		assert.Equal(t, device.UserID, gotDeviceQuery.UserID)
+
+		newAccessToken := util.RandomString(16)
+		newRefreshToken := util.RandomString(16)
+		err = db.UpdateDeviceTokens(ctx, alice.ID, domain, deviceID, newAccessToken, newRefreshToken)
+		assert.NoError(t, err, "unable to update device tokens")
+
+		updatedDevice, err := db.GetDeviceByRefreshToken(ctx, newRefreshToken)
+		assert.NoError(t, err, "unable to get device by new refresh token")
+		assert.Equal(t, device.ID, updatedDevice.ID)
+		assert.Equal(t, newAccessToken, updatedDevice.AccessToken)
+
+		_, err = db.GetDeviceByRefreshToken(ctx, refreshToken)
+		assert.Error(t, err, "old refresh token should no longer work")
+
+		err = db.UpdateRefreshToken(ctx, deviceID, alice.ID, newRefreshToken, util.RandomString(16), util.RandomString(16))
+		assert.NoError(t, err, "unable to update refresh token using UpdateRefreshToken method")
+	})
+}
+
 
 func Test_Profile(t *testing.T) {
 	alice := test.NewUser(t)

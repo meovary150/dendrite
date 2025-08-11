@@ -93,18 +93,31 @@ const selectDevicesByIDSQL = "" +
 const updateDeviceLastSeen = "" +
 	"UPDATE userapi_devices SET last_seen_ts = $1, ip = $2, user_agent = $3 WHERE localpart = $4 AND server_name = $5 AND device_id = $6"
 
+const selectDeviceByRefreshTokenSQL = "" +
+	"SELECT session_id, device_id, localpart, server_name, access_token FROM userapi_devices WHERE refresh_token = $1"
+
+const updateDeviceTokensSQL = "" +
+	"UPDATE userapi_devices SET access_token = $1, refresh_token = $2 WHERE localpart = $3 AND server_name = $4 AND device_id = $5"
+
+const insertDeviceWithRefreshTokenSQL = "" +
+	"INSERT INTO userapi_devices(device_id, localpart, server_name, access_token, refresh_token, created_ts, display_name, last_seen_ts, ip, user_agent) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)" +
+	" RETURNING session_id"
+
 type devicesStatements struct {
-	insertDeviceStmt             *sql.Stmt
-	selectDeviceByTokenStmt      *sql.Stmt
-	selectDeviceByIDStmt         *sql.Stmt
-	selectDevicesByLocalpartStmt *sql.Stmt
-	selectDevicesByIDStmt        *sql.Stmt
-	updateDeviceNameStmt         *sql.Stmt
-	updateDeviceLastSeenStmt     *sql.Stmt
-	deleteDeviceStmt             *sql.Stmt
-	deleteDevicesByLocalpartStmt *sql.Stmt
-	deleteDevicesStmt            *sql.Stmt
-	serverName                   spec.ServerName
+	insertDeviceStmt                *sql.Stmt
+	insertDeviceWithRefreshTokenStmt *sql.Stmt
+	selectDeviceByTokenStmt         *sql.Stmt
+	selectDeviceByRefreshTokenStmt  *sql.Stmt
+	selectDeviceByIDStmt            *sql.Stmt
+	selectDevicesByLocalpartStmt    *sql.Stmt
+	selectDevicesByIDStmt           *sql.Stmt
+	updateDeviceNameStmt            *sql.Stmt
+	updateDeviceLastSeenStmt        *sql.Stmt
+	updateDeviceTokensStmt          *sql.Stmt
+	deleteDeviceStmt                *sql.Stmt
+	deleteDevicesByLocalpartStmt    *sql.Stmt
+	deleteDevicesStmt               *sql.Stmt
+	serverName                      spec.ServerName
 }
 
 func NewPostgresDevicesTable(db *sql.DB, serverName spec.ServerName) (tables.DevicesTable, error) {
@@ -120,13 +133,19 @@ func NewPostgresDevicesTable(db *sql.DB, serverName spec.ServerName) (tables.Dev
 		Version: "userapi: add last_seen_ts",
 		Up:      deltas.UpLastSeenTSIP,
 	})
+	m.AddMigrations(sqlutil.Migration{
+		Version: "userapi: add refresh_token",
+		Up:      deltas.UpRefreshTokens,
+	})
 	err = m.Up(context.Background())
 	if err != nil {
 		return nil, err
 	}
 	return s, sqlutil.StatementList{
 		{&s.insertDeviceStmt, insertDeviceSQL},
+		{&s.insertDeviceWithRefreshTokenStmt, insertDeviceWithRefreshTokenSQL},
 		{&s.selectDeviceByTokenStmt, selectDeviceByTokenSQL},
+		{&s.selectDeviceByRefreshTokenStmt, selectDeviceByRefreshTokenSQL},
 		{&s.selectDeviceByIDStmt, selectDeviceByIDSQL},
 		{&s.selectDevicesByLocalpartStmt, selectDevicesByLocalpartSQL},
 		{&s.updateDeviceNameStmt, updateDeviceNameSQL},
@@ -135,6 +154,7 @@ func NewPostgresDevicesTable(db *sql.DB, serverName spec.ServerName) (tables.Dev
 		{&s.deleteDevicesStmt, deleteDevicesSQL},
 		{&s.selectDevicesByIDStmt, selectDevicesByIDSQL},
 		{&s.updateDeviceLastSeenStmt, updateDeviceLastSeen},
+		{&s.updateDeviceTokensStmt, updateDeviceTokensSQL},
 	}.Prepare(db)
 }
 
@@ -338,5 +358,53 @@ func (s *devicesStatements) UpdateDeviceLastSeen(ctx context.Context, txn *sql.T
 	lastSeenTs := time.Now().UnixNano() / 1000000
 	stmt := sqlutil.TxStmt(txn, s.updateDeviceLastSeenStmt)
 	_, err := stmt.ExecContext(ctx, lastSeenTs, ipAddr, userAgent, localpart, serverName, deviceID)
+	return err
+}
+
+func (s *devicesStatements) InsertDeviceWithRefreshToken(
+	ctx context.Context, txn *sql.Tx, id string,
+	localpart string, serverName spec.ServerName,
+	accessToken, refreshToken string, displayName *string, ipAddr, userAgent string,
+) (*api.Device, error) {
+	createdTimeMS := time.Now().UnixNano() / 1000000
+	var sessionID int64
+	stmt := sqlutil.TxStmt(txn, s.insertDeviceWithRefreshTokenStmt)
+	if err := stmt.QueryRowContext(ctx, id, localpart, serverName, accessToken, refreshToken, createdTimeMS, displayName, createdTimeMS, ipAddr, userAgent).Scan(&sessionID); err != nil {
+		return nil, fmt.Errorf("insertDeviceWithRefreshTokenStmt: %w", err)
+	}
+	dev := &api.Device{
+		ID:           id,
+		UserID:       userutil.MakeUserID(localpart, serverName),
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		SessionID:    sessionID,
+		LastSeenTS:   createdTimeMS,
+		LastSeenIP:   ipAddr,
+		UserAgent:    userAgent,
+	}
+	if displayName != nil {
+		dev.DisplayName = *displayName
+	}
+	return dev, nil
+}
+
+func (s *devicesStatements) SelectDeviceByRefreshToken(
+	ctx context.Context, refreshToken string,
+) (*api.Device, error) {
+	var dev api.Device
+	var localpart string
+	var serverName spec.ServerName
+	stmt := s.selectDeviceByRefreshTokenStmt
+	err := stmt.QueryRowContext(ctx, refreshToken).Scan(&dev.SessionID, &dev.ID, &localpart, &serverName, &dev.AccessToken)
+	if err == nil {
+		dev.UserID = userutil.MakeUserID(localpart, serverName)
+		dev.RefreshToken = refreshToken
+	}
+	return &dev, err
+}
+
+func (s *devicesStatements) UpdateDeviceTokens(ctx context.Context, txn *sql.Tx, localpart string, serverName spec.ServerName, deviceID, accessToken, refreshToken string) error {
+	stmt := sqlutil.TxStmt(txn, s.updateDeviceTokensStmt)
+	_, err := stmt.ExecContext(ctx, accessToken, refreshToken, localpart, serverName, deviceID)
 	return err
 }
