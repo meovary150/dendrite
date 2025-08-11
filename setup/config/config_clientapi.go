@@ -5,9 +5,17 @@ import (
 	"time"
 )
 
+type ClientFeatures struct {
+	EnablePresence  bool `yaml:"enable_presence"`
+	EnableVoIP      bool `yaml:"enable_voip"`
+	EnablePushers   bool `yaml:"enable_pushers"`
+	EnablePushRules bool `yaml:"enable_push_rules"`
+}
+
 type ClientAPI struct {
 	Matrix  *Global  `yaml:"-"`
 	Derived *Derived `yaml:"-"` // TODO: Nuke Derived from orbit
+	Features ClientFeatures `yaml:"features"`
 
 	// If set disables new users from registering (except via shared
 	// secrets)
@@ -69,6 +77,12 @@ func (c *ClientAPI) Defaults(opts DefaultOpts) {
 	c.RegistrationDisabled = true
 	c.OpenRegistrationWithoutVerificationEnabled = false
 	c.RateLimiting.Defaults()
+	c.Features = ClientFeatures{
+		EnablePresence:  true,
+		EnableVoIP:      true,
+		EnablePushers:   true,
+		EnablePushRules: true,
+	}
 }
 
 func (c *ClientAPI) Verify(configErrs *ConfigErrors) {
