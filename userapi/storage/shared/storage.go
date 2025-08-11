@@ -695,9 +695,28 @@ func (d *Database) CreateDeviceWithRefreshToken(
 	ctx context.Context, localpart string, serverName spec.ServerName,
 	deviceID *string, accessToken, refreshToken string, displayName *string, ipAddr, userAgent string,
 ) (dev *api.Device, returnErr error) {
-	dev, returnErr = d.CreateDevice(ctx, localpart, serverName, deviceID, accessToken, displayName, ipAddr, userAgent)
-	if returnErr == nil && dev != nil {
-		dev.RefreshToken = refreshToken
+	if deviceID != nil {
+		returnErr = d.Writer.Do(d.DB, nil, func(txn *sql.Tx) error {
+			var err error
+			dev, err = d.Devices.InsertDeviceWithRefreshToken(ctx, txn, *deviceID, localpart, serverName, accessToken, refreshToken, displayName, ipAddr, userAgent)
+			return err
+		})
+	} else {
+		for i := 0; i < 5; i++ {
+			deviceIDStr, err := generateDeviceID()
+			if err != nil {
+				returnErr = err
+				return
+			}
+			returnErr = d.Writer.Do(d.DB, nil, func(txn *sql.Tx) error {
+				var err error
+				dev, err = d.Devices.InsertDeviceWithRefreshToken(ctx, txn, deviceIDStr, localpart, serverName, accessToken, refreshToken, displayName, ipAddr, userAgent)
+				return err
+			})
+			if returnErr == nil {
+				break
+			}
+		}
 	}
 	return
 }
