@@ -112,6 +112,14 @@ echo "✅ WhatsApp: 已启用"
 echo "⚠️  Telegram: 已启用 (需配置 API 凭据)"
 echo ""
 
+# 显示消息回填状态
+echo "📜 消息回填 (Backfill):"
+echo "-----------------------------------------"
+echo "✅ WhatsApp: 已启用 (90天历史，自动媒体下载)"
+echo "✅ Telegram: 已启用 (100条初始消息)"
+echo "详细配置请查看: BACKFILL_CONFIG.md"
+echo ""
+
 # 最近的错误日志
 echo "⚠️  最近的错误 (如果有):"
 echo "-----------------------------------------"

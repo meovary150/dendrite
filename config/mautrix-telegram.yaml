@@ -96,22 +96,45 @@ bridge:
     skip_deleted_members: true
     # Whether or not to automatically synchronize contacts and chats of Matrix users logged into the bridge
     startup_sync: true
-    # Number of most recently active dialogs to check when syncing chats.
+    # Number of most recently active dialogs to check when syncing chats (0 = all).
     sync_update_limit: 0
-    # Number of most recently active dialogs to create portals for when syncing chats.
-    sync_create_limit: 15
+    # Number of most recently active dialogs to create portals for when syncing chats (0 = all).
+    sync_create_limit: 0
     # Should all chats be scheduled to be created later?
     sync_deferred_create_all: false
     # The maximum number of simultaneous Telegram forwarded backfills to do per room.
     max_telegram_delete: 10
     # Whether or not to sync direct chats at startup.
-    sync_direct_chats: false
+    sync_direct_chats: true
     # Whether or not to bridge channels and supergroups at all.
     sync_chat_list: true
     # Whether or not to listen to the Telegram status of account that was used to log in to the bridge.
     sync_with_custom_puppets: true
     # Whether or not to sync the chat list when the user logs into the bridge and when the connection is reestablished after a disconnect.
     sync_on_user_login: true
+    
+    # 消息回填配置
+    backfill:
+        # 启用初始历史回填
+        initial_limit: 100
+        # 启用 MSC2716 增量回填
+        msc2716: false
+        # 双傀儡回填
+        double_puppet_backfill: true
+        # 普通傀儡的初始回填
+        normal_puppet_initial_limit: 100
+        # 禁用通知的限制
+        disable_notifications: 100
+        # 未读消息回填
+        unread_hours_threshold: 720
+        # 立即回填
+        immediate:
+            # 最多回填消息数
+            max_events: 100
+            # 工作线程数
+            worker_count: 3
+        # 转发回填
+        forward_backfill: true
     # Filters for automatic portal creation after login
     filter:
         # Filter mode to use. Either "whitelist" or "blacklist".

@@ -78,29 +78,56 @@ bridge:
   # Reaction settings
   reaction_shortcodes: true
   
-  # History sync
+  # History sync - 完整的消息回填配置
   history_sync:
+    # 请求完整同步
     request_full_sync: true
+    # 登录时立即回填
+    backfill_on_login: true
+    # 登录时请求同步
+    request_on_login: true
+    # 完整同步配置
     full_sync_config:
-      days_limit: 30
-      size_mb_limit: 100
+      # 同步最近 90 天的消息
+      days_limit: 90
+      # 每次同步最大 500MB
+      size_mb_limit: 500
+      # 不限制存储配额
       storage_quota_mb: null
+    # 媒体请求配置
     media_requests:
+      # 自动请求媒体文件
       auto_request_media: true
+      # 立即请求
       request_method: immediate
+      # 本地时间 120 秒
       request_local_time: 120
+    # 初始同步所有对话 (-1 表示全部)
     max_initial_conversations: -1
+    # 未读消息时间阈值（0 表示同步所有）
     unread_hours_threshold: 0
+    # 立即同步配置
     immediate:
-      worker_count: 1
-      max_events: 10
+      # 增加工作线程以加快同步
+      worker_count: 3
+      # 每批最多 50 条消息
+      max_events: 50
+    # 自动创建 portals（聊天室）
+    create_portals: true
+    # 延迟同步配置（分批处理历史消息）
     deferred:
+      # 第一批：最近 7 天
       - start_days_ago: 7
-        max_batch_events: 20
-        batch_delay: 5
-      - start_days_ago: 30
         max_batch_events: 50
+        batch_delay: 5
+      # 第二批：最近 30 天
+      - start_days_ago: 30
+        max_batch_events: 100
         batch_delay: 10
+      # 第三批：最近 90 天
+      - start_days_ago: 90
+        max_batch_events: 200
+        batch_delay: 20
   
   # User avatar sync
   user_avatar_sync: true
@@ -118,6 +145,18 @@ bridge:
   double_puppet_backfill: true
   # 允许双傀儡发送消息
   double_puppet_allow_puppet: true
+  # 启用初始历史回填
+  initial_history_fill: true
+  # 回填限制（-1 表示无限制）
+  initial_history_limit: -1
+  # 双傀儡的回填
+  backfill:
+    # 启用双傀儡回填
+    enabled: true
+    # 回填消息数量限制
+    limit: 200
+    # 双傀儡的消息回填
+    double_puppet_backfill: true
   
   # Private chat settings
   private_chat_portal_meta: true
