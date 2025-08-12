@@ -56,7 +56,7 @@ services:
 
   # WhatsApp Bridge
   mautrix-whatsapp:
-    image: dock.mau.dev/mautrix/whatsapp:latest
+    image: dock.mau.dev/mautrix/whatsapp:v0.12.3
     container_name: mautrix-whatsapp
     restart: always
     depends_on:
